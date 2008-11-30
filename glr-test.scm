@@ -7,7 +7,7 @@
 ;;
 
 (package* glr-test/v1.0.0
-  (require: lalr/v2.3.0))
+  (require: lalr/v2.4.0))
 
 
 (define (syntax-error msg . args)
