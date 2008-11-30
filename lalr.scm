@@ -1680,13 +1680,13 @@
    
 
    (maintainer:
-    "Dominique Boucher (SchemeWay) <schemeway at sympatico.ca>")
+    "Dominique Boucher (SchemeWay) <schemeway at gmail.com>")
 
    (author:
-    "Dominique Boucher (SchemeWay) <schemeway at sympatico.ca>")
+    "Dominique Boucher (SchemeWay) <schemeway at gmail.com>")
 
    (homepage:
-    "http://schemeway.dyndns.org/Lalr/lalr.html")
+    "http://code.google.com/p/lalr-scm")
 
    (description: 
     "An Efficient and Portable LALR(1) Parser Generator for Scheme")
@@ -1892,7 +1892,9 @@
                          (___recover i)
                          (if (>= ___sp 0)
                              (set! ___input #f)
-                             (set! ___input '*eoi*))
+                             (begin
+                               (set! ___sp 0)
+                               (set! ___input '*eoi*)))
                          (loop))))
              
                   ;; Shift current token on top of the stack
