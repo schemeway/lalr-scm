@@ -1,4 +1,4 @@
-;;;
+-;;;
 ;;;; An Efficient and Portable LALR(1) Parser Generator for Scheme
 ;;;
 ;;
@@ -1322,6 +1322,17 @@
 		   (else
 		    (lalr-error "Invalid terminal or nonterminal: " first)))))))
 
+	(define (check-error-production rhs)
+	  (let loop ((rhs rhs))
+	    (if (pair? rhs)
+		(begin
+		  (if (and (eq? (car rhs) 'error)
+			   (or (null? (cdr rhs))
+			       (not (member (cadr rhs) terms))
+			       (not (null? (cddr rhs)))))
+		      (lalr-error "Invalid 'error' production. A single terminal symbol must follow the 'error' token.:" rhs))
+		  (loop (cdr rhs))))))
+
 
 	(if (not (pair? (cdr nonterm-def)))
 	    (lalr-error "At least one production needed for nonterminal:" (car nonterm-def))
@@ -1340,11 +1351,8 @@
 				      (lalr-error "Invalid terminal or nonterminal:" x)))
 				rhs)
 		      ;; -- check 'error' productions
-		      (if (member 'error rhs)
-			  (if (or (not (= 2 (length rhs)))
-				  (not (equal? (car rhs) 'error))
-				  (not (member (cadr rhs) terms)))
-			      (lalr-error "Invalid 'error' production:" rhs)))
+		      (check-error-production rhs)
+
 		      (if (and (pair? rest)
 			       (eq? (car rest) ':)
 			       (pair? (cdr rest)))
