@@ -1,4 +1,4 @@
--;;;
+;;;
 ;;;; An Efficient and Portable LALR(1) Parser Generator for Scheme
 ;;;
 ;;
