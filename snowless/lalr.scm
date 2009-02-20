@@ -74,12 +74,13 @@
  ;; -- SISC
  (sisc
   (import logicops)
+  (import record)
 	
   (define pprint pretty-print)
   (define lalr-keyword? symbol?)
   (define-macro BITS-PER-WORD (lambda () 32))
-  (defin-macro logical-or (lambda (x . y) `(logor ,x ,@y)))
-  (define-macro (lalr-error msg obj) `(error ,msg ,obj)))
+  (define-macro logical-or (lambda (x . y) `(logor ,x ,@y)))
+  (define-macro (lalr-error msg obj) `(error "~a ~S:" ,msg ,obj)))
 	
        
  (else
