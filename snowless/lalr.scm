@@ -55,6 +55,7 @@
  ;; -- Guile
  (guile
   (use-modules (ice-9 pretty-print))
+  (use-modules (srfi srfi-9))
 
   (define pprint pretty-print)
   (define lalr-keyword? symbol?)
@@ -1807,7 +1808,7 @@
   (define (___push delta new-category lvalue)
     (set! ___sp (- ___sp (* delta 2)))
     (let* ((state     (vector-ref ___stack ___sp))
-           (new-state (cdr (assq new-category (vector-ref ___gtable state)))))
+           (new-state (cdr (assoc new-category (vector-ref ___gtable state)))))
       (set! ___sp (+ ___sp 2))
       (___checkstack)
       (vector-set! ___stack ___sp new-state)
@@ -1823,7 +1824,7 @@
     (vector-set! ___stack ___sp token))
   
   (define (___action x l)
-    (let ((y (assq x l)))
+    (let ((y (assoc x l)))
       (if y (cadr y) (cadar l))))
   
   (define (___recover tok)
@@ -1831,7 +1832,7 @@
       (if (< sp 0)
           (set! ___sp sp)
           (let* ((state (vector-ref ___stack sp))
-                 (act   (assq 'error (vector-ref ___atable state))))
+                 (act   (assoc 'error (vector-ref ___atable state))))
             (if act
                 (begin
                   (set! ___sp sp)
@@ -1849,7 +1850,7 @@
           (if (eq? i '*eoi*)
               (set! ___sp -1)
               (if (memq i sync-set)
-                  (let ((act (assq i (vector-ref ___atable state))))
+                  (let ((act (assoc i (vector-ref ___atable state))))
                     (vector-set! ___stack (- ___sp 1) #f)
                     (vector-set! ___stack ___sp (cadr act)))
                   (begin
@@ -1998,7 +1999,7 @@
     (cons state (cons symbol stack)))
   
   (define (get-actions token action-list)
-    (let ((pair (assq token action-list)))
+    (let ((pair (assoc token action-list)))
       (if pair 
           (cdr pair)
           (cdar action-list)))) ;; get the default action
