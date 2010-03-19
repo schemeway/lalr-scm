@@ -1,14 +1,9 @@
-":";exec snow -- "$0" "$@"
 ;;;
 ;;;; Tests for the GLR parser generator
 ;;;
 ;;
 ;; @created   "Fri Aug 19 11:23:48 EDT 2005"
 ;;
-
-(package* glr-test/v1.0.0
-  (require: lalr/v2.4.0))
-
 
 (define (syntax-error msg . args)
   (display msg (current-error-port))
