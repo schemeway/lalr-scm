@@ -17,7 +17,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-(define *lalr-scm-version* 2.4.1)
+(define *lalr-scm-version* "2.4.1")
 
 
 (cond-expand 
