@@ -2,13 +2,6 @@
 ;;;; Simple calculator in Scheme
 ;;;
 ;;
-;; @created   "Tue Jan  6 12:47:23 2004"
-;; @modified  "Mon Oct 25 11:07:24 2004"
-;; @author    "Dominique Boucher"
-;; @copyright "Dominique Boucher"
-;;
-;; Simple arithmetic calculator. 
-;; 
 ;;   This program illustrates the use of the lalr-scm parser generator
 ;; for Scheme. It is NOT robust, since calling a function with 
 ;; the wrong number of arguments may generate an error that will
@@ -44,6 +37,7 @@
    ;; --- rules
    (line     (assign NEWLINE)        : $1
              (expr   NEWLINE)        : $1
+	     (NEWLINE)               : #f
              (error  NEWLINE)        : #f)
 
    (assign   (ID = expr)             : (add-binding $1 $3))
@@ -65,17 +59,10 @@
              ()                      : '())))
 
 
-(define (display-result v)
-  (if v
-      (begin
-        (display "==> ")
-        (display v)
-        (newline))))
-
-
 ;;;
 ;;;;   The lexer
 ;;;
+
 
 (cond-expand
  (gambit
@@ -83,6 +70,7 @@
   (define port-column input-port-column))
  
  (chicken
+  (define (force-output) #f)
   (define (port-line port) 
     (let-values (((line _) (port-position port)))
       line))
@@ -90,8 +78,13 @@
   (define (port-column port)
     (let-values (((_ column) (port-position port)))
       column)))
+
+ (guile
+  (define (port-line port) '??)
+  (define (port-column port) '??))
  
  (else
+  (define (force-output) #f)
   (define (port-line port) '??)
   (define (port-column port) '??)))
 
@@ -143,12 +136,6 @@
                  (loop))))))))
 
 
-(define (read-line)
-  (let loop ((c (read-char)))
-    (if (and (not (eof-object? c))
-             (not (char=? c #\newline)))
-        (loop (read-char)))))
-
 
 ;;;
 ;;;;   Environment management
@@ -195,6 +182,17 @@
 ;;;
 
 
+(define (display-result v)
+  (if v
+      (begin
+        (display v)
+        (newline)))
+  (display-prompt))
+
+
+(define (display-prompt)
+  (display "[calculator]> ")
+  (force-output))
 
 
 (define calc
@@ -220,17 +218,21 @@
                                       (lexical-token-category token)))
                          (let ((source (lexical-token-source token)))
                            (if (source-location? source)
-                               (begin
-                                 (display " (at line ")
-                                 (display (source-location-line source))
-                                 (display ", column ")
-                                 (display (+ 1 (source-location-column source)))
-                                 (display ")")))))
+                               (let ((line (source-location-line source))   
+				     (column (source-location-column source)))
+				 (if (and (number? line) (number? column))
+				     (begin
+				       (display " (at line ")
+				       (display line)
+				       (display ", column ")
+				       (display (+ 1 column))
+				       (display ")")))))))
                        (for-each display args))
                    (newline)))
                 (start
                  (lambda ()
                    (calc-parser (make-lexer errorp) errorp))))
+	 (display-prompt)
          (start))))))
 
 (calc)
