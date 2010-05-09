@@ -235,6 +235,11 @@
 
   (define driver-name     'lr-driver)
 
+  (define (glr-driver?)
+    (eq? driver-name 'glr-driver))
+  (define (lr-driver?)
+    (eq? driver-name 'lr-driver))
+
   (define (gen-tables! tokens gram )
     (initialize-all)
     (rewrite-grammar
@@ -1097,14 +1102,14 @@
 			  (add-conflict-message
 			   "%% Reduce/Reduce conflict (reduce " (- new-action) ", reduce " (- current-action) 
 			   ") on '" (get-symbol (+ symbol nvars)) "' in state " state)
-			  (if (eq? driver-name 'glr-driver)
+			  (if (glr-driver?)
 			      (set-cdr! (cdr actions) (cons new-action (cddr actions)))
 			      (set-car! (cdr actions) (max current-action new-action))))
 			;; --- shift/reduce conflict
 			;; can we resolve the conflict using precedences?
 			(case (resolve-conflict symbol (- current-action))
 			  ;; -- shift
-			  ((shift)   (if (eq? driver-name 'glr-driver)
+			  ((shift)   (if (glr-driver?)
 					 (set-cdr! (cdr actions) (cons new-action (cddr actions)))
 					 (set-car! (cdr actions) new-action)))
 			  ;; -- reduce
@@ -1113,11 +1118,12 @@
 			  (else      (add-conflict-message
 				      "%% Shift/Reduce conflict (shift " new-action ", reduce " (- current-action)
 				      ") on '" (get-symbol (+ symbol nvars)) "' in state " state)
-				     (if (eq? driver-name 'glr-driver)
+				     (if (glr-driver?)
 					 (set-cdr! (cdr actions) (cons new-action (cddr actions)))
 					 (set-car! (cdr actions) new-action))))))))
           
-	    (vector-set! action-table state (cons (list symbol new-action) state-actions)))))
+	    (vector-set! action-table state (cons (list symbol new-action) state-actions)))
+	))
 
     (define (add-action-for-all-terminals state action)
       (do ((i 1 (+ i 1)))
@@ -1131,7 +1137,9 @@
       (let ((red (vector-ref reduction-table i)))
 	(if (and red (>= (red-nreds red) 1))
 	    (if (and (= (red-nreds red) 1) (vector-ref consistent i))
-		(add-action-for-all-terminals i (- (car (red-rules red))))
+		(if (glr-driver?)
+		    (add-action-for-all-terminals i (- (car (red-rules red))))
+		    (add-action i 'default (- (car (red-rules red)))))
 		(let ((k (vector-ref lookaheads (+ i 1))))
 		  (let loop ((j (vector-ref lookaheads i)))
 		    (if (< j k)
