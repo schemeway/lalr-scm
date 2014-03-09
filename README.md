@@ -27,7 +27,7 @@ please contact the maintainer.
 
 The lalr.scm files declares a macro called lalr-parser:
 
-   (lalr-parser [options] tokens rules ...)
+    (lalr-parser [options] tokens rules ...)
 
 This macro, when given appropriate arguments, generates an LALR(1) syntax
 analyzer. The macro accepts at least two arguments. The first is a list of
@@ -47,7 +47,7 @@ The lexical analyzer is zero-argument function (a thunk) invoked each time the
 parser needs to look-ahead in the token stream. A token is either a symbol, or
 a record created by the function make-lexical-token:
 
-   (make-lexical-token category source value)
+    (make-lexical-token category source value)
 
 Once the end of file is encountered, the lexical analyzer must always return
 the symbol `'*eoi*` each time it is invoked.
@@ -61,7 +61,7 @@ lexical-token-category, lexical-token-source, and lexical-token-value.
 The source location object is not used by the parser itself, but is usually a
 record constructed by the function make-source-location:
 
-   (make-source-location input line column offset length)
+    (make-source-location input line column offset length)
 
 The input argument is an object describing the source input (the name of the
 input file, for example), while the other arguments give respectively the line
@@ -167,20 +167,20 @@ The following options are available.
 lalr-scm implements a very simple error recovery strategy. A production can be
 of the form
 
-   (rulename
-      ...
-      (error TERMINAL) : action-code)
+    (rulename
+       ...
+       (error TERMINAL) : action-code)
 
 (There can be several such productions for a single rulename.) This will cause
 the parser to skip all the tokens produced by the lexer that are different than
 the given TERMINAL. For a C-like language, one can synchronize on semicolons
 and closing curly brackets by writing error rules like these:
 
-   (stmt
-      (expression SEMICOLON) : ...
-      (LBRACKET stmt RBRACKET) : ...
-      (error SEMICOLON)
-      (error RBRACKET))
+    (stmt
+       (expression SEMICOLON) : ...
+       (LBRACKET stmt RBRACKET) : ...
+       (error SEMICOLON)
+       (error RBRACKET))
 
 ### A final note on conflict resolution
 
@@ -201,7 +201,7 @@ the technique has been devised.
 To generate a GLR parser instead of a regular LALR parser, simply put the
 following option in the options section of the grammar declaration:
 
-  (driver: glr)
+    (driver: glr)
 
 ### Running the parser
 
