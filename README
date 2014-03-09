@@ -1,3 +1,0 @@
-This directory contains copy of lalr.scm and calc.scm not packaged as
-Snow balls. They can be used AS IS with all supported Scheme systems.
-

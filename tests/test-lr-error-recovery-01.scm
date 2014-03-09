@@ -7,20 +7,20 @@
 
 (define (doit . tokens)
   (let ((parser (lalr-parser
-		 (expect: 0)
-		 (NUMBER BAD NEWLINE)
+         (expect: 0)
+         (NUMBER BAD NEWLINE)
 
-		 (script	(lines)		: (reverse $1)
-				()		: 0)
-		 (lines	(lines line)		: (cons $2 $1)
-			(line)			: (list $1))
-		 (line	(NEWLINE)		: (list 'line $1)
-			(NUMBER NEWLINE)	: (list 'line $1 $2)
-			(NUMBER NUMBER NEWLINE)	: (list 'line $1 $2 $3)
+         (script    (lines)     : (reverse $1)
+                ()      : 0)
+         (lines (lines line)        : (cons $2 $1)
+            (line)          : (list $1))
+         (line  (NEWLINE)       : (list 'line $1)
+            (NUMBER NEWLINE)    : (list 'line $1 $2)
+            (NUMBER NUMBER NEWLINE) : (list 'line $1 $2 $3)
 
-			;;This semantic  action will cause  "(recover $1
-			;;$2)" to be the result of the offending line.
-			(error NEWLINE)		: (list 'recover $1 $2)))))
+            ;;This semantic  action will cause  "(recover $1
+            ;;$2)" to be the result of the offending line.
+            (error NEWLINE)     : (list 'recover $1 $2)))))
     (parser (make-lexer tokens) error-handler)))
 
 ;;; --------------------------------------------------------------------
@@ -36,44 +36,44 @@
 
 (check
     (doit (make-lexical-token 'NUMBER  #f 1)
-	  (make-lexical-token 'NEWLINE #f #\newline))
+      (make-lexical-token 'NEWLINE #f #\newline))
   => '((line 1 #\newline)))
 
 (check
     (doit (make-lexical-token 'NUMBER  #f 1)
-	  (make-lexical-token 'NUMBER  #f 2)
-	  (make-lexical-token 'NEWLINE #f #\newline))
+      (make-lexical-token 'NUMBER  #f 2)
+      (make-lexical-token 'NEWLINE #f #\newline))
   => '((line 1 2 #\newline)))
 
 (check
     (doit (make-lexical-token 'NUMBER  #f 1)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 2)
-	  (make-lexical-token 'NEWLINE #f #\newline))
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 2)
+      (make-lexical-token 'NEWLINE #f #\newline))
   => '((line 1 #\newline)
        (line 2 #\newline)))
 
 (check
     (doit (make-lexical-token 'NUMBER  #f 1)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 2)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 3)
-	  (make-lexical-token 'NEWLINE #f #\newline))
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 2)
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 3)
+      (make-lexical-token 'NEWLINE #f #\newline))
   => '((line 1 #\newline)
        (line 2 #\newline)
        (line 3 #\newline)))
 
 (check
     (doit (make-lexical-token 'NUMBER  #f 1)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 2)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 3)
-	  (make-lexical-token 'NEWLINE #f #\newline)
-	  (make-lexical-token 'NUMBER  #f 41)
-	  (make-lexical-token 'NUMBER  #f 42)
-	  (make-lexical-token 'NEWLINE #f #\newline))
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 2)
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 3)
+      (make-lexical-token 'NEWLINE #f #\newline)
+      (make-lexical-token 'NUMBER  #f 41)
+      (make-lexical-token 'NUMBER  #f 42)
+      (make-lexical-token 'NEWLINE #f #\newline))
   => '((line 1 #\newline)
        (line 2 #\newline)
        (line 3 #\newline)
@@ -86,13 +86,13 @@
     ;;The BAD triggers an error,  recovery happens, the first NEWLINE is
     ;;correctly parsed as recovery token; the second line is correct.
     (let ((r (doit (make-lexical-token 'NUMBER  #f 1)
-		   (make-lexical-token 'BAD      #f 'alpha)
-		   (make-lexical-token 'NEWLINE #f #\newline)
-		   (make-lexical-token 'NUMBER  #f 2)
-		   (make-lexical-token 'NEWLINE #f #\newline))))
+           (make-lexical-token 'BAD      #f 'alpha)
+           (make-lexical-token 'NEWLINE #f #\newline)
+           (make-lexical-token 'NUMBER  #f 2)
+           (make-lexical-token 'NEWLINE #f #\newline))))
       (cons r *error*))
   => '(((recover #f #f)
-	(line 2 #\newline))
+    (line 2 #\newline))
        (error-handler "Syntax error: unexpected token : " . BAD)))
 
 
@@ -101,15 +101,15 @@
     ;;second  and   third  BADs,  the  first  NEWLINE   is  detected  as
     ;;synchronisation token; the second line is correct.
     (let ((r (doit (make-lexical-token 'NUMBER  #f 1)
-		   (make-lexical-token 'BAD     #f 'alpha)
-		   (make-lexical-token 'BAD     #f 'beta)
-		   (make-lexical-token 'BAD     #f 'delta)
-		   (make-lexical-token 'NEWLINE #f #\newline)
-		   (make-lexical-token 'NUMBER  #f 2)
-		   (make-lexical-token 'NEWLINE #f #\newline))))
+           (make-lexical-token 'BAD     #f 'alpha)
+           (make-lexical-token 'BAD     #f 'beta)
+           (make-lexical-token 'BAD     #f 'delta)
+           (make-lexical-token 'NEWLINE #f #\newline)
+           (make-lexical-token 'NUMBER  #f 2)
+           (make-lexical-token 'NEWLINE #f #\newline))))
       (cons r *error*))
   => '(((recover #f #f)
-	(line 2 #\newline))
+    (line 2 #\newline))
        (error-handler "Syntax error: unexpected token : " . BAD)))
 
 ;;; --------------------------------------------------------------------
@@ -127,9 +127,9 @@
     ;;synchronisation one is found.  End-of-input is an acceptable token
     ;;after the start.
     (let ((r (doit (make-lexical-token 'NUMBER  #f 1)
-		   (make-lexical-token 'BAD     #f 'alpha)
-		   (make-lexical-token 'BAD     #f 'beta)
-		   (make-lexical-token 'BAD     #f 'delta))))
+           (make-lexical-token 'BAD     #f 'alpha)
+           (make-lexical-token 'BAD     #f 'beta)
+           (make-lexical-token 'BAD     #f 'delta))))
       (cons r *error*))
   => '(0 (error-handler "Syntax error: unexpected token : " . BAD)))
 

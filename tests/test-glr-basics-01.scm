@@ -7,11 +7,11 @@
 (load "common-test.scm")
 
 (define (doit . tokens)
-  (let* ((lexer		(make-lexer tokens))
-	 (parser	(lalr-parser (expect: 0)
-				     (driver: glr)
-				     (A)
-				     (e (A) : $1))))
+  (let* ((lexer     (make-lexer tokens))
+     (parser    (lalr-parser (expect: 0)
+                     (driver: glr)
+                     (A)
+                     (e (A) : $1))))
     (parser lexer error-handler)))
 
 (check
@@ -28,8 +28,8 @@
     ;;tokens.   Finally, an  unexpected end-of-input  error  is returned
     ;;because EOI is invalid as first token after the start.
     (doit (make-lexical-token 'A #f 1)
-	  (make-lexical-token 'A #f 2)
-	  (make-lexical-token 'A #f 3))
+      (make-lexical-token 'A #f 2)
+      (make-lexical-token 'A #f 3))
   => '())
 
 ;;; end of file
