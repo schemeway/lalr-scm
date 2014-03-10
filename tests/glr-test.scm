@@ -7,7 +7,7 @@
 ;;
 
 (package* glr-test/v1.0.0
-  (require: lalr/v2.4.0))
+          (require: lalr/v2.4.0))
 
 
 (define (syntax-error msg . args)
@@ -21,10 +21,10 @@
   (let ((phrase words))
     (lambda ()
       (if (null? phrase)
-          '*eoi*
-          (let ((word (car phrase)))
-            (set! phrase (cdr phrase))
-            word)))))
+        '*eoi*
+        (let ((word (car phrase)))
+          (set! phrase (cdr phrase))
+          word)))))
 
 
 ;;;
@@ -35,16 +35,16 @@
 (define parser-1
   ;; Grammar taken from Tomita's "An Efficient Augmented-Context-Free Parsing Algorithm"
   (lalr-parser
-   (driver: glr)
-   (expect: 2)
-   (*n *v *d *p)
-   (<s>  (<np> <vp>)
-         (<s> <pp>))
-   (<np> (*n)
-         (*d *n)
-         (<np> <pp>))
-   (<pp> (*p <np>))
-   (<vp> (*v <np>))))
+    (driver: glr)
+    (expect: 2)
+    (*n *v *d *p)
+    (<s>  (<np> <vp>)
+          (<s> <pp>))
+    (<np> (*n)
+          (*d *n)
+          (<np> <pp>))
+    (<pp> (*p <np>))
+    (<vp> (*v <np>))))
 
 
 (define *phrase-1* '(*n *v *d *n *p *d *n *p *d *n *p *d *n))
@@ -61,12 +61,12 @@
 (define parser-2
   ;; The dangling-else problem
   (lalr-parser
-   (driver: glr)
-   (expect: 1)
-   ((nonassoc: if then else e s))
-   (<s> (s)
-        (if e then <s>)
-        (if e then <s> else <s>))))
+    (driver: glr)
+    (expect: 1)
+    ((nonassoc: if then else e s))
+    (<s> (s)
+         (if e then <s>)
+         (if e then <s> else <s>))))
 
 
 (define *phrase-2* '(if e then if e then s else s))
