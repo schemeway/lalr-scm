@@ -1,6 +1,7 @@
 ;;;
 ;;;; An Efficient and Portable LALR(1) Parser Generator for Scheme
 ;;;
+;; Copyright 2014  Jan Nieuwenhuizen <janneke@gnu.org>
 ;; Copyright 1993, 2010 Dominique Boucher
 ;;
 ;; This program is free software: you can redistribute it and/or
@@ -17,7 +18,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-(define *lalr-scm-version* "2.4.1")
+(define *lalr-scm-version* "2.5.0")
 
 
 (cond-expand 
@@ -1599,17 +1600,19 @@
 		     `(let* (,@(if act
 				   (let loop ((i 1) (l rhs))
 				     (if (pair? l)
-					 (let ((rest (cdr l)))
-					   (cons 
-					    `(,(string->symbol
-						(string-append
-						 "$"
-						 (number->string 
-						  (+ (- n i) 1))))
-					      ,(if (eq? driver-name 'lr-driver)
-						   `(vector-ref ___stack (- ___sp ,(- (* i 2) 1)))
-						   `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
-					    (loop (+ i 1) rest)))
+					 (let ((rest (cdr l))
+                                               (ns (number->string (+ (- n i) 1))))
+                                           (cons
+                                            `(tok ,(if (eq? driver-name 'lr-driver)
+                                                       `(vector-ref ___stack (- ___sp ,(- (* i 2) 1)))
+                                                       `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
+                                            (cons
+                                             `(,(string->symbol (string-append "$" ns))
+                                               (if (lexical-token? tok) (lexical-token-value tok) tok))
+                                             (cons
+                                              `(,(string->symbol (string-append "@" ns))
+                                                (if (lexical-token? tok) (lexical-token-source tok) tok))
+                                              (loop (+ i 1) rest)))))
 					 '()))
 				   '()))
 			,(if (= nt 0)
@@ -1887,17 +1890,11 @@
         (lexical-token-category tok)
         tok))
 
-  (define (___value tok)
-    (if (lexical-token? tok)
-        (lexical-token-value tok)
-        tok))
-  
   (define (___run)
     (let loop ()
       (if ___input
           (let* ((state (vector-ref ___stack ___sp))
                  (i     (___category ___input))
-                 (attr  (___value ___input))
                  (act   (___action i (vector-ref ___atable state))))
             
             (cond ((not (symbol? i))
@@ -1926,7 +1923,7 @@
              
                   ;; Shift current token on top of the stack
                   ((>= act 0)
-                   (___shift act attr)
+                   (___shift act ___input)
                    (set! ___input (if (eq? i '*eoi*) '*eoi* #f))
                    (loop))
              
@@ -2033,8 +2030,7 @@
   (define (run)
     (let loop-tokens ()
       (consume)
-      (let ((symbol (token-category *input*))
-            (attr   (token-attribute *input*)))
+      (let ((symbol (token-category *input*)))
         (for-all-processes
          (lambda (process)
            (let loop ((stacks (list process)) (active-stacks '()))
@@ -2052,7 +2048,7 @@
                                      (add-parse (car (take-right stack 2)))
                                      (actions-loop other-actions active-stacks))
                                     ((>= action 0)
-                                     (let ((new-stack (shift action attr stack)))
+                                     (let ((new-stack (shift action *input* stack)))
                                        (add-process new-stack))
                                      (actions-loop other-actions active-stacks))
                                     (else
