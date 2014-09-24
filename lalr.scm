@@ -1,6 +1,7 @@
 ;;;
 ;;;; An Efficient and Portable LALR(1) Parser Generator for Scheme
 ;;;
+;; Copyright 2014  Jan Nieuwenhuizen <janneke@gnu.org>
 ;; Copyright 1993, 2010 Dominique Boucher
 ;;
 ;; This program is free software: you can redistribute it and/or
@@ -17,7 +18,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-(define *lalr-scm-version* "2.4.1")
+(define *lalr-scm-version* "2.5.0")
 
 
 (cond-expand 
@@ -33,7 +34,8 @@
   (def-macro (lalr-error msg obj) `(error ,msg ,obj))
 
   (define pprint pretty-print)
-  (define lalr-keyword? keyword?))
+  (define lalr-keyword? keyword?)
+  (define (note-source-location lvalue tok) lvalue))
  
  ;; -- 
  (bigloo
@@ -44,7 +46,8 @@
   (define lalr-keyword? keyword?)
   (def-macro (BITS-PER-WORD) 29)
   (def-macro (logical-or x . y) `(bit-or ,x ,@y))
-  (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj)))
+  (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj))
+  (define (note-source-location lvalue tok) lvalue))
  
  ;; -- Chicken
  (chicken
@@ -56,7 +59,8 @@
   (define lalr-keyword? symbol?)
   (def-macro (BITS-PER-WORD) 30)
   (def-macro (logical-or x . y) `(bitwise-ior ,x ,@y))
-  (def-macro (lalr-error msg obj) `(error ,msg ,obj)))
+  (def-macro (lalr-error msg obj) `(error ,msg ,obj))
+  (define (note-source-location lvalue tok) lvalue))
 
  ;; -- STKlos
  (stklos
@@ -67,7 +71,8 @@
   (define lalr-keyword? keyword?)
   (define-macro (BITS-PER-WORD) 30)
   (define-macro (logical-or x . y) `(bit-or ,x ,@y))
-  (define-macro (lalr-error msg obj) `(error 'lalr-parser ,msg ,obj)))
+  (define-macro (lalr-error msg obj) `(error 'lalr-parser ,msg ,obj))
+  (define (note-source-location lvalue tok) lvalue))
 
  ;; -- Guile
  (guile
@@ -78,7 +83,14 @@
   (define lalr-keyword? symbol?)
   (define-macro (BITS-PER-WORD) 30)
   (define-macro (logical-or x . y) `(logior ,x ,@y))
-  (define-macro (lalr-error msg obj) `(error ,msg ,obj)))
+  (define-macro (lalr-error msg obj) `(error ,msg ,obj))
+  (define (note-source-location lvalue tok)
+    (if (and (supports-source-properties? lvalue)
+             (not (source-property lvalue 'loc))
+             (lexical-token? tok))
+        (set-source-property! lvalue 'loc (lexical-token-source tok)))
+    lvalue))
+
 
  ;; -- Kawa
  (kawa
@@ -87,7 +99,8 @@
   (define logical-or logior)
   (define (lalr-keyword? obj) (keyword? obj))
   (define (pprint obj) (pretty-print obj))
-  (define (lalr-error msg obj) (error msg obj)))
+  (define (lalr-error msg obj) (error msg obj))
+  (define (note-source-location lvalue tok) lvalue))
 
  ;; -- SISC
  (sisc
@@ -98,8 +111,8 @@
   (define lalr-keyword? symbol?)
   (define-macro BITS-PER-WORD (lambda () 32))
   (define-macro logical-or (lambda (x . y) `(logor ,x ,@y)))
-  (define-macro (lalr-error msg obj) `(error "~a ~S:" ,msg ,obj)))
-	
+  (define-macro (lalr-error msg obj) `(error "~a ~S:" ,msg ,obj))
+  (define (note-source-location lvalue tok) lvalue))
        
  (else
   (error "Unsupported Scheme system")))
@@ -1599,22 +1612,27 @@
 		     `(let* (,@(if act
 				   (let loop ((i 1) (l rhs))
 				     (if (pair? l)
-					 (let ((rest (cdr l)))
-					   (cons 
-					    `(,(string->symbol
-						(string-append
-						 "$"
-						 (number->string 
-						  (+ (- n i) 1))))
-					      ,(if (eq? driver-name 'lr-driver)
-						   `(vector-ref ___stack (- ___sp ,(- (* i 2) 1)))
-						   `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
-					    (loop (+ i 1) rest)))
+					 (let ((rest (cdr l))
+                                               (ns (number->string (+ (- n i) 1))))
+                                           (cons
+                                            `(tok ,(if (eq? driver-name 'lr-driver)
+                                                       `(vector-ref ___stack (- ___sp ,(- (* i 2) 1)))
+                                                       `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
+                                            (cons
+                                             `(,(string->symbol (string-append "$" ns))
+                                               (if (lexical-token? tok) (lexical-token-value tok) tok))
+                                             (cons
+                                              `(,(string->symbol (string-append "@" ns))
+                                                (if (lexical-token? tok) (lexical-token-source tok) tok))
+                                              (loop (+ i 1) rest)))))
 					 '()))
 				   '()))
 			,(if (= nt 0)
 			     '$1
-			     `(___push ,n ,nt ,(cdr p) ,@(if (eq? driver-name 'lr-driver) '() '(___sp)))))))))
+			     `(___push ,n ,nt ,(cdr p) ,@(if (eq? driver-name 'lr-driver) '() '(___sp)) 
+                                       ,(if (eq? driver-name 'lr-driver)
+                                            `(vector-ref ___stack (- ___sp ,(length rhs)))
+                                            `(list-ref ___sp ,(length rhs))))))))))
 
 	   gram/actions))))
 
@@ -1830,14 +1848,14 @@
     (if (>= ___sp (vector-length ___stack))
         (___growstack)))
   
-  (define (___push delta new-category lvalue)
+  (define (___push delta new-category lvalue tok)
     (set! ___sp (- ___sp (* delta 2)))
     (let* ((state     (vector-ref ___stack ___sp))
            (new-state (cdr (assoc new-category (vector-ref ___gtable state)))))
       (set! ___sp (+ ___sp 2))
       (___checkstack)
       (vector-set! ___stack ___sp new-state)
-      (vector-set! ___stack (- ___sp 1) lvalue)))
+      (vector-set! ___stack (- ___sp 1) (note-source-location lvalue tok))))
   
   (define (___reduce st)
     ((vector-ref ___rtable st) ___stack ___sp ___gtable ___push ___pushback))
@@ -1887,17 +1905,11 @@
         (lexical-token-category tok)
         tok))
 
-  (define (___value tok)
-    (if (lexical-token? tok)
-        (lexical-token-value tok)
-        tok))
-  
   (define (___run)
     (let loop ()
       (if ___input
           (let* ((state (vector-ref ___stack ___sp))
                  (i     (___category ___input))
-                 (attr  (___value ___input))
                  (act   (___action i (vector-ref ___atable state))))
             
             (cond ((not (symbol? i))
@@ -1926,7 +1938,7 @@
              
                   ;; Shift current token on top of the stack
                   ((>= act 0)
-                   (___shift act attr)
+                   (___shift act ___input)
                    (set! ___input (if (eq? i '*eoi*) '*eoi* #f))
                    (loop))
              
@@ -2011,11 +2023,11 @@
     (set! *parses* (cons parse *parses*)))
     
 
-  (define (push delta new-category lvalue stack)
+  (define (push delta new-category lvalue stack tok)
     (let* ((stack     (drop stack (* delta 2)))
            (state     (car stack))
            (new-state (cdr (assv new-category (vector-ref ___gtable state)))))
-        (cons new-state (cons lvalue stack))))
+        (cons new-state (cons (note-source-location lvalue tok) stack))))
   
   (define (reduce state stack)
     ((vector-ref ___rtable state) stack ___gtable push))
@@ -2033,8 +2045,7 @@
   (define (run)
     (let loop-tokens ()
       (consume)
-      (let ((symbol (token-category *input*))
-            (attr   (token-attribute *input*)))
+      (let ((symbol (token-category *input*)))
         (for-all-processes
          (lambda (process)
            (let loop ((stacks (list process)) (active-stacks '()))
@@ -2052,7 +2063,7 @@
                                      (add-parse (car (take-right stack 2)))
                                      (actions-loop other-actions active-stacks))
                                     ((>= action 0)
-                                     (let ((new-stack (shift action attr stack)))
+                                     (let ((new-stack (shift action *input* stack)))
                                        (add-process new-stack))
                                      (actions-loop other-actions active-stacks))
                                     (else
