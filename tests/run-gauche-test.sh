@@ -1,4 +1,4 @@
-# guile-test.sh --
+# gauche-test.sh --
 #
 
 for item in \
@@ -24,7 +24,7 @@ for item in \
     test-lr-single-expressions.scm
     do
         printf "\n\n*** Running $item\n"
-        gosh -I. -l$item -e'(exit (if (null? *error*) 0 (begin (print *error*) 1)))'
+        gosh -I. $item
 done
 
 ### end of file
