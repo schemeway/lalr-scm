@@ -1,19 +1,24 @@
 ;;; common-test.scm --
 ;;;
 
-(debug-enable 'backtrace)
-(use-modules (ice-9 syncase))
+(cond-expand
+
+ ;; -- Guile
+ (guile
+  (debug-enable 'backtrace)
+  (use-modules (ice-9 syncase))
+  (define-syntax when
+    (syntax-rules ()
+      ((_ ?expr ?body ...)
+       (if ?expr
+	 (let () ?body ...)
+         #f)))))
+
+ (else))
 
 (load "../lalr.scm")
 
 (define *error* '())
-
-(define-syntax when
-  (syntax-rules ()
-    ((_ ?expr ?body ...)
-     (if ?expr
-	 (let () ?body ...)
-       #f))))
 
 (define-syntax check
   (syntax-rules (=>)
@@ -26,11 +31,11 @@
        (set! *error* '())
        (when (not (?equal result expected))
 	 (display "Failed test: \n")
-	 (pretty-print (quote ?expr))(newline)
+	 (pprint (quote ?expr))(newline)
 	 (display "\tresult was: ")
-	 (pretty-print result)(newline)
+	 (pprint result)(newline)
 	 (display "\texpected: ")
-	 (pretty-print expected)(newline))))))
+	 (pprint expected)(newline))))))
 
 ;;; --------------------------------------------------------------------
 
