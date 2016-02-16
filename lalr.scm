@@ -1973,6 +1973,9 @@
   (lambda (lexerp errorp)
     (set! ___errorp errorp)
     (set! ___lexerp lexerp)
+    (set! ___input #f)
+    (set! ___curr-input #f)
+    (set! ___reuse-input #f)
     (___initstack)
     (___run)))
 
