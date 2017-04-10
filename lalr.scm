@@ -126,27 +126,52 @@
   (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj))
   (define (note-source-location lvalue tok) lvalue))
 
+ ;; -- Chez Scheme
+ (chez
+  (define-syntax define-macro
+    (lambda (x)
+      (syntax-case x ()
+        ((_ (name . args) body ...)
+         (syntax (define-macro name (lambda args body ...))))
+        ((_ name transform)
+         (syntax
+           (define-syntax name
+             (lambda (x)
+               (datum->syntax (syntax x)
+                              (apply transform (cdr (syntax->datum x)))))))))))
+
+  (define (BITS-PER-WORD) 29)
+  (define lalr-error error)
+  (define lalr-keyword? symbol?)
+  (define logical-or logior)
+  (define pprint pretty-print)
+  (define (note-source-location lvalue tok) lvalue))
+
  (else
   (error "Unsupported Scheme system")))
 
 
-(define-record-type lexical-token
-  (make-lexical-token category source value)
-  lexical-token?
-  (category lexical-token-category)
-  (source   lexical-token-source)
-  (value    lexical-token-value))
+(cond-expand
+ (chez
+  (define-record lexical-token (category source value))
+  (define-record source-location (input line column offset length)))
 
+ (else
+  (define-record-type lexical-token
+    (make-lexical-token category source value)
+    lexical-token?
+    (category lexical-token-category)
+    (source   lexical-token-source)
+    (value    lexical-token-value))
 
-(define-record-type source-location
-  (make-source-location input line column offset length)
-  source-location?
-  (input   source-location-input)
-  (line    source-location-line)
-  (column  source-location-column)
-  (offset  source-location-offset)
-  (length  source-location-length))
-
+  (define-record-type source-location
+    (make-source-location input line column offset length)
+    source-location?
+    (input   source-location-input)
+    (line    source-location-line)
+    (column  source-location-column)
+    (offset  source-location-offset)
+    (length  source-location-length))))
 
 
       ;; - Macros pour la gestion des vecteurs de bits
