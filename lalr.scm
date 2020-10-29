@@ -64,10 +64,9 @@
 
  ;; -- STKlos
  (stklos
-  (require "pp")
+  (require "pretty-print")
 
-  (define (pprint form) (pp form :port (current-output-port)))
-
+  (define pprint pp)
   (define lalr-keyword? keyword?)
   (define-macro (BITS-PER-WORD) 30)
   (define-macro (logical-or x . y) `(bit-or ,x ,@y))
@@ -155,6 +154,10 @@
  (chez
   (define-record lexical-token (category source value))
   (define-record source-location (input line column offset length)))
+
+ (stklos
+  (define-struct lexical-token category source value)
+  (define-struct source-location input line column offset length))
 
  (else
   (define-record-type lexical-token
