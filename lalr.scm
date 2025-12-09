@@ -18,7 +18,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-(define *lalr-scm-version* "2.5.0")
+(define *lalr-scm-version* "2.5.1")
 
 
 (cond-expand 
@@ -1861,8 +1861,13 @@
   
   (define ___curr-input #f)
   (define ___reuse-input #f)
-  
   (define ___input #f)
+
+  (define (___init-lexer)
+    (set! ___input #f)
+    (set! ___curr-input #f)
+    (set! ___reuse-input #f))
+
   (define (___consume)
     (set! ___input (if ___reuse-input ___curr-input (___lexerp)))
     (set! ___reuse-input #f)
@@ -2002,6 +2007,7 @@
     (set! ___errorp errorp)
     (set! ___lexerp lexerp)
     (___initstack)
+    (___init-lexer)
     (___run)))
 
 
@@ -2020,12 +2026,12 @@
   
   ;; -- Input handling 
   
-  (define *input* #f)
+  (define ___input #f)
   (define (initialize-lexer lexer)
     (set! ___lexerp lexer)
-    (set! *input* #f))
+    (set! ___input #f))
   (define (consume)
-    (set! *input* (___lexerp)))
+    (set! ___input (___lexerp)))
   
   (define (token-category tok)
     (if (lexical-token? tok)
@@ -2085,7 +2091,7 @@
   (define (run)
     (let loop-tokens ()
       (consume)
-      (let ((symbol (token-category *input*)))
+      (let ((symbol (token-category ___input)))
         (for-all-processes
          (lambda (process)
            (let loop ((stacks (list process)) (active-stacks '()))
@@ -2103,7 +2109,7 @@
                                      (add-parse (car (take-right stack 2)))
                                      (actions-loop other-actions active-stacks))
                                     ((>= action 0)
-                                     (let ((new-stack (shift action *input* stack)))
+                                     (let ((new-stack (shift action ___input stack)))
                                        (add-process new-stack))
                                      (actions-loop other-actions active-stacks))
                                     (else

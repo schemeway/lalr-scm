@@ -7,6 +7,7 @@ for item in \
     test-glr-basics-03.scm              \
     test-glr-basics-04.scm              \
     test-glr-basics-05.scm              \
+    test-glr-basics-06.scm              \
     test-glr-associativity.scm          \
     test-glr-script-expression.scm      \
     test-glr-single-expressions.scm     \
@@ -16,6 +17,7 @@ for item in \
     test-lr-basics-03.scm               \
     test-lr-basics-04.scm               \
     test-lr-basics-05.scm               \
+    test-lr-basics-06.scm               \
     test-lr-error-recovery-01.scm       \
     test-lr-error-recovery-02.scm       \
     test-lr-no-clause.scm               \
